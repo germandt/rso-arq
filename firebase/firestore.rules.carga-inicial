@@ -1,0 +1,13 @@
+rules_version = '2';
+// Reglas TEMPORALES solo para la carga inicial de datos (seed/cargar.mjs).
+// Vencen solas el 15/10/2026. Después de cargar, pegar firestore.rules.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{col}/{id} {
+      allow read: if col in ['obras', 'tipologias'];
+      allow get: if col == 'compradores';
+      allow write: if col in ['obras', 'tipologias', 'compradores']
+        && request.time < timestamp.date(2026, 10, 15);
+    }
+  }
+}

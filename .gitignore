@@ -1,0 +1,11 @@
+# Datos personales de compradores: nunca al repo público
+seed/compradores.json
+seed/codigos.csv
+_original/
+# Tabla de precios real: solo local (se usa para modo demo y para la carga)
+demo/
+CLAUDE.md
+.DS_Store
+node_modules/
+# Zips de trabajo
+*.zip

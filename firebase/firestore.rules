@@ -1,0 +1,27 @@
+rules_version = '2';
+// Reglas DEFINITIVAS. Pegar en Firebase Console → Firestore → Reglas → Publicar.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Avance de obra y tipologías: públicos (no tienen precios).
+    match /obras/{id}       { allow read: if true; allow write: if false; }
+    match /tipologias/{id}  { allow read: if true; allow write: if false; }
+
+    // Cada comprador: solo se puede leer conociendo el código exacto.
+    // `list` prohibido => nadie puede listar todos los códigos.
+    match /compradores/{codigo} {
+      allow get: if true;
+      allow list, write: if false;
+    }
+
+    // Tokens de notificación: la app solo puede registrarlos.
+    match /fcmTokens/{token} {
+      allow create, update: if token.size() < 500
+        && request.resource.data.keys().hasOnly(['obra', 'creado', 'plataforma'])
+        && request.resource.data.obra is string
+        && request.resource.data.plataforma in ['ios', 'android', 'otro']
+        && request.resource.data.creado == request.time;
+      allow read, delete: if false;
+    }
+  }
+}

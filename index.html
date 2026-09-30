@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Aires del Parque</title>
+  <meta name="description" content="Seguí el avance de tu obra, tu unidad y tu plan de pagos." />
+  <meta name="theme-color" content="#1e1f2e" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Aires del Parque" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300;400;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="feed" id="feed">
+
+    <!-- 1 · Estado de la obra -->
+    <section class="slide slide-obra" id="obra">
+      <div class="render" id="render">
+        <img class="bg" alt="" />
+        <div class="frame" id="frame">
+          <img class="layer gray" alt="" />
+          <img class="layer wip" alt="" />
+          <img class="layer color" alt="Render del edificio Aires del Parque" />
+          <div class="cutline" id="cutline"><span id="cutlabel"></span></div>
+          <div class="pin" id="pin"><span></span></div>
+        </div>
+      </div>
+      <div class="shade-top"></div>
+      <div class="shade-bottom"></div>
+
+      <header class="brand">
+        <div class="logo"><b>RSO</b>ARQUITECTOS</div>
+        <h1 id="obra-nombre"></h1>
+        <p id="obra-dir"></p>
+      </header>
+
+      <div class="obra-card glass">
+        <div class="row between">
+          <span class="eyebrow">Avance general</span>
+          <span class="muted small" id="actualizado"></span>
+        </div>
+        <div class="big"><span id="avance-num">0</span><small>%</small></div>
+        <div class="bar"><i id="avance-bar"></i></div>
+        <div class="row between small">
+          <span id="etapa-actual"></span>
+          <span class="muted">Entrega <b id="entrega"></b></span>
+        </div>
+        <div class="legend small">
+          <span><i class="sw sw-color"></i>Construido</span>
+          <span><i class="sw sw-wip"></i>En ejecución</span>
+          <span><i class="sw sw-gray"></i>Pendiente</span>
+        </div>
+      </div>
+      <div class="hint">Deslizá<svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6" /></svg></div>
+    </section>
+
+    <!-- 2 · Etapas -->
+    <section class="slide slide-etapas">
+      <div class="content">
+        <span class="eyebrow">Avance por etapa</span>
+        <h2>Así va la obra</h2>
+        <ol class="etapas" id="etapas"></ol>
+      </div>
+    </section>
+
+    <!-- 3 · Tu unidad -->
+    <section class="slide slide-unidad">
+      <div class="content">
+        <span class="eyebrow" id="u-eyebrow">Tu unidad</span>
+        <h2 id="u-titulo"></h2>
+        <p class="muted" id="u-sub"></p>
+        <figure class="plano"><img id="u-plano" alt="Plano de la unidad" /></figure>
+        <div class="m2">
+          <div><span class="muted small">Cubiertos</span><b id="u-cub"></b></div>
+          <div><span class="muted small">Semicubiertos</span><b id="u-semi"></b></div>
+          <div class="accent"><span class="small">Total</span><b id="u-total"></b></div>
+        </div>
+        <div class="precio glass">
+          <span class="eyebrow">Valor pactado</span>
+          <div class="big" id="u-precio"></div>
+          <span class="muted small" id="u-m2precio"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4 · Pagos -->
+    <section class="slide slide-pagos">
+      <div class="content">
+        <span class="eyebrow">Tu plan de pagos</span>
+        <h2>Llevás pagado</h2>
+        <div class="ring-wrap">
+          <svg class="ring" viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="52" class="track" />
+            <circle cx="60" cy="60" r="52" class="val" id="ring" />
+          </svg>
+          <div class="ring-center">
+            <div class="big"><span id="p-pct">0</span><small>%</small></div>
+            <span class="muted small" id="p-pagado"></span>
+          </div>
+        </div>
+
+        <div class="pago-card glass">
+          <div class="row between">
+            <div>
+              <span class="eyebrow">Anticipo</span>
+              <div class="mid" id="p-anticipo"></div>
+            </div>
+            <span class="chip ok" id="p-anticipo-fecha"></span>
+          </div>
+        </div>
+
+        <div class="pago-card glass">
+          <div class="row between">
+            <div>
+              <span class="eyebrow">Cuotas</span>
+              <div class="mid"><span id="p-cuotas-n"></span> <span class="muted small" id="p-cuota-monto"></span></div>
+            </div>
+          </div>
+          <div class="ticks" id="ticks"></div>
+          <div class="row between small">
+            <span class="muted">Próxima: <b id="p-proxima"></b></span>
+            <span class="muted">Saldo <b id="p-saldo"></b></span>
+          </div>
+        </div>
+
+        <p class="footer small muted" id="contacto"></p>
+      </div>
+    </section>
+  </main>
+  
+
+  <nav class="dots" id="dots" aria-label="Secciones"></nav>
+
+  <!-- Activar notificaciones -->
+  <button class="avisos glass" id="avisos" hidden aria-label="Avisos de obra" title="Avisos de obra">
+    <svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></svg>
+    <span class="off-txt">Activar avisos</span><span class="on-txt">Avisos activos</span>
+  </button>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <!-- Ingreso con código personal -->
+  <section class="gate" id="gate">
+    <form class="gate-card" id="gate-form">
+      <div class="logo"><b>RSO</b>ARQUITECTOS</div>
+      <h1>Aires del Parque</h1>
+      <p class="muted">Ingresá el código personal que te enviamos para ver tu unidad y tus pagos.</p>
+      <input id="gate-input" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" placeholder="Ej. K7P2-9XQM" />
+      <button type="submit">Entrar</button>
+      <p class="gate-error" id="gate-error"></p>
+      <p class="muted small">¿No lo tenés? Escribinos a info@rsoarquitectos.com</p>
+    </form>
+  </section>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+  <script type="module" src="main.js"></script>
+</body>
+</html>

@@ -1,0 +1,193 @@
+// Arranque de la app: decide de dónde salen los datos, maneja el código
+// personal del comprador y las notificaciones push.
+const CFG = self.APP_CONFIG;
+const $ = (id) => document.getElementById(id);
+const CODE_KEY = "adp.codigo";
+
+const store = {
+  get: (k) => { try { return localStorage.getItem(k); } catch { return null; } },
+  set: (k, v) => { try { localStorage.setItem(k, v); } catch {} },
+  del: (k) => { try { localStorage.removeItem(k); } catch {} },
+};
+
+// ---------- Service worker (instalable + offline + push) ----------
+let swReg = null;
+if ("serviceWorker" in navigator) {
+  swReg = navigator.serviceWorker.register("./firebase-messaging-sw.js", { scope: "./" }).catch((e) => {
+    console.warn("SW no registrado", e);
+    return null;
+  });
+}
+
+// ---------- Firebase (carga perezosa desde el CDN) ----------
+const sdk = (m) => `https://www.gstatic.com/firebasejs/${CFG.firebaseSdk}/firebase-${m}.js`;
+let fb = null;
+async function firebase() {
+  if (fb) return fb;
+  const [{ initializeApp }, fs] = await Promise.all([import(sdk("app")), import(sdk("firestore"))]);
+  const app = initializeApp(CFG.firebase);
+  fb = { app, fs, db: fs.getFirestore(app) };
+  return fb;
+}
+
+// ---------- Datos ----------
+async function cargarDemo() {
+  await new Promise((ok, err) => {
+    const s = document.createElement("script");
+    s.src = "demo/data-demo.js";
+    s.onload = ok;
+    s.onerror = err;
+    document.head.appendChild(s);
+  });
+  const pedida = (new URLSearchParams(location.search).get("unidad") || "").toUpperCase();
+  const cod = window.UNIDADES[pedida] ? pedida : window.BOLETO.unidad;
+  return {
+    OBRA: window.OBRA,
+    TIPOLOGIAS: window.TIPOLOGIAS,
+    COMPRADOR: { ...window.BOLETO, ...window.UNIDADES[cod], unidad: cod },
+  };
+}
+
+async function cargarFirestore(codigo) {
+  const { fs, db } = await firebase();
+  const [obra, comp, tipos] = await Promise.all([
+    fs.getDoc(fs.doc(db, "obras", CFG.obraId)),
+    fs.getDoc(fs.doc(db, "compradores", codigo)),
+    fs.getDocs(fs.collection(db, "tipologias")),
+  ]);
+  if (!comp.exists()) throw new Error("codigo");
+  if (!obra.exists()) throw new Error("obra");
+  const TIPOLOGIAS = {};
+  tipos.forEach((d) => (TIPOLOGIAS[d.id] = d.data()));
+  return { OBRA: obra.data(), TIPOLOGIAS, COMPRADOR: comp.data() };
+}
+
+const normalizar = (c) => (c || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+
+// ---------- Pantalla de ingreso con código ----------
+function pedirCodigo(error) {
+  document.body.classList.add("gate-on");
+  $("gate-error").textContent = error || "";
+  $("gate-form").onsubmit = (e) => {
+    e.preventDefault();
+    const c = normalizar($("gate-input").value);
+    if (c.length < 6) return ($("gate-error").textContent = "Revisá el código: es más largo.");
+    store.set(CODE_KEY, c);
+    location.reload();
+  };
+}
+
+async function iniciar() {
+  let datos;
+  if (CFG.demo) {
+    datos = await cargarDemo();
+    document.body.classList.add("is-demo");
+  } else {
+    const url = new URL(location.href);
+    const deLink = normalizar(url.searchParams.get("c"));
+    if (deLink) {
+      store.set(CODE_KEY, deLink);
+      url.searchParams.delete("c"); // no dejar el código a la vista
+      history.replaceState(null, "", url);
+    }
+    const codigo = store.get(CODE_KEY);
+    if (!codigo) return pedirCodigo();
+    try {
+      datos = await cargarFirestore(codigo);
+    } catch (e) {
+      if (e.message === "codigo") {
+        store.del(CODE_KEY);
+        return pedirCodigo("Ese código no existe. Revisalo o pedilo a RSO.");
+      }
+      console.error(e);
+      return pedirCodigo("No pudimos cargar los datos. Probá de nuevo en un rato.");
+    }
+  }
+  window.renderApp(datos);
+  prepararAvisos();
+}
+
+// ---------- Notificaciones push ----------
+const esIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+const instalada = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+
+function prepararAvisos() {
+  const btn = $("avisos");
+  if (!btn) return;
+  const estado = typeof Notification !== "undefined" ? Notification.permission : "unsupported";
+  if (estado === "granted" && store.get("adp.push") === "ok") btn.classList.add("on");
+  btn.hidden = false;
+  btn.onclick = activarAvisos;
+  if (!CFG.demo && estado === "granted" && store.get("adp.push") === "ok") primerPlanoAlAbrir();
+}
+
+// Con la app abierta FCM no muestra la notificación solo: la mostramos nosotros.
+let escuchando = false;
+function escucharEnPrimerPlano(messaging, onMessage, reg) {
+  if (escuchando) return;
+  escuchando = true;
+  onMessage(messaging, ({ notification = {} }) => {
+    reg?.showNotification(notification.title || "Aires del Parque", {
+      body: notification.body || "",
+      icon: "icons/icon-192.png",
+    });
+  });
+}
+
+async function primerPlanoAlAbrir() {
+  try {
+    const reg = await swReg;
+    const { app } = await firebase();
+    const { getMessaging, onMessage, isSupported } = await import(sdk("messaging"));
+    if (await isSupported()) escucharEnPrimerPlano(getMessaging(app), onMessage, reg);
+  } catch (e) {
+    console.warn("Avisos en primer plano no disponibles", e);
+  }
+}
+
+function aviso(msg) {
+  const t = $("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(aviso.t);
+  aviso.t = setTimeout(() => t.classList.remove("show"), 4200);
+}
+
+async function activarAvisos() {
+  const btn = $("avisos");
+  if (CFG.demo) return aviso("Modo demo: los avisos se activan cuando esté conectado Firebase.");
+  if (esIOS && !instalada)
+    return aviso("En iPhone: tocá Compartir → “Agregar a inicio”, abrí la app desde el ícono y activá los avisos ahí.");
+  if (typeof Notification === "undefined" || !("serviceWorker" in navigator))
+    return aviso("Este navegador no admite notificaciones.");
+
+  const permiso = await Notification.requestPermission();
+  if (permiso !== "granted") return aviso("Sin permiso no podemos avisarte. Podés cambiarlo en los ajustes del navegador.");
+
+  try {
+    btn.classList.add("busy");
+    const reg = await swReg;
+    const { app, fs, db } = await firebase();
+    const { getMessaging, getToken, onMessage, isSupported } = await import(sdk("messaging"));
+    if (!(await isSupported())) return aviso("Este navegador no admite notificaciones push.");
+    const messaging = getMessaging(app);
+    const token = await getToken(messaging, { vapidKey: CFG.vapidKey, serviceWorkerRegistration: reg });
+    await fs.setDoc(fs.doc(db, "fcmTokens", token), {
+      obra: CFG.obraId,
+      creado: fs.serverTimestamp(),
+      plataforma: esIOS ? "ios" : /android/i.test(navigator.userAgent) ? "android" : "otro",
+    });
+    store.set("adp.push", "ok");
+    btn.classList.add("on");
+    aviso("Listo: te vamos a avisar cuando haya novedades de la obra.");
+
+    escucharEnPrimerPlano(messaging, onMessage, reg);
+  } catch (e) {
+    console.error(e);
+    aviso("No pudimos activar los avisos. Probá de nuevo.");
+  } finally {
+    btn.classList.remove("busy");
+  }
+}
+
+iniciar();

@@ -1,0 +1,10 @@
+[
+  {
+    "cliente": "Nombre Apellido",
+    "unidad": "3C",
+    "fechaBoleto": "2025-03-10",
+    "anticipoPct": 0.3,
+    "cuotas": 36,
+    "primeraCuota": "2025-04-10"
+  }
+]
