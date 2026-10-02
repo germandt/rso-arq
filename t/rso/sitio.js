@@ -52,9 +52,9 @@ self.SITIO = {
     composicion: "PB + 9 pisos · 24 departamentos de 2 ambientes · 9 cocheras",
     actualizado: "2026-09-15",
     entregaPlanificada: "2027-12",
-    // Avance real desde Firestore (obras/aires-del-parque) si está disponible;
+    // Avance real desde Firestore si está disponible (ruta F1, con la raíz vieja de respaldo);
     // las fechas planificadas y reales de cada etapa son del mockup.
-    enVivo: { proyecto: "rso-arq", doc: "obras/aires-del-parque" },
+    enVivo: { proyecto: "rso-arq", doc: "desarrolladoras/rso/obras/aires-del-parque", respaldo: "obras/aires-del-parque" },
     etapas: [
       { nombre: "Demolición y excavación", peso: 5, avance: 100, plan: "2025-09", real: "2025-09", ejemplo: true },
       { nombre: "Fundaciones", peso: 10, avance: 100, plan: "2025-12", real: "2025-11", ejemplo: true },

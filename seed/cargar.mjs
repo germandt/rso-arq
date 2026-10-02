@@ -6,6 +6,8 @@
 //   - obra, tipologías y precios salen de demo/data-demo.js
 //   - compradores salen de seed/compradores.json (si no existe, usa compradores.ejemplo.json)
 //   - genera un código por comprador y los guarda en seed/codigos.csv (NO se sube al repo)
+//   - obra y tipologías se escriben en las colecciones raíz y en desarrolladoras/{dev}/obras/{obra}/
+//     (F1; las raíz quedan hasta la F7). Las unidades, solo en la ruta nueva y sin precio.
 import fs from "node:fs";
 import vm from "node:vm";
 import crypto from "node:crypto";
@@ -18,9 +20,11 @@ const soloObra = process.argv.includes("--solo-obra");
 
 // --- Config pública y datos demo (se evalúan los scripts tal cual) ---
 const ctx = { self: {}, window: {} };
+vm.runInNewContext(fs.readFileSync(path.join(root, "tenant.js"), "utf8"), ctx);
 vm.runInNewContext(fs.readFileSync(path.join(root, "config.js"), "utf8"), ctx);
 vm.runInNewContext(fs.readFileSync(path.join(root, "demo/data-demo.js"), "utf8"), ctx);
 const CFG = ctx.self.APP_CONFIG;
+const OBRA_NUEVA = `desarrolladoras/${ctx.self.TENANT.id}/obras/${CFG.obraId}`;
 const { OBRA, UNIDADES, TIPOLOGIAS } = ctx.window;
 if (CFG.demo && !dry) throw new Error("Primero completá config.js con el firebaseConfig real.");
 
@@ -58,11 +62,18 @@ async function escribir(col, id, data) {
 }
 
 await escribir("obras", CFG.obraId, OBRA);
+await escribir(OBRA_NUEVA.split("/").slice(0, -1).join("/"), CFG.obraId, OBRA);
 if (soloObra) process.exit(0);
 // Firestore no admite listas dentro de listas: [["Baño", "2.25 × 1.65 m"]] → [{ nombre, medida }]
 for (const [id, t] of Object.entries(TIPOLOGIAS)) {
   const ambientesDetalle = (t.ambientesDetalle || []).map(([nombre, medida]) => ({ nombre, medida }));
   await escribir("tipologias", id, { ...t, ambientesDetalle });
+  await escribir(`${OBRA_NUEVA}/tipologias`, id, { ...t, ambientesDetalle });
+}
+for (const [u, { cub, semi }] of Object.entries(UNIDADES)) {
+  const piso = Number(u.slice(0, -1));
+  const tipologiaId = u.slice(-1);
+  await escribir(`${OBRA_NUEVA}/unidades`, u, { nombre: `${piso}°${tipologiaId}`, piso, tipologiaId, cub, semi });
 }
 
 const csv = (x) => (/[",\n]/.test(x) ? `"${String(x).replace(/"/g, '""')}"` : x);

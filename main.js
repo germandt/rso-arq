@@ -75,18 +75,39 @@ async function cargarDemo() {
   };
 }
 
-async function cargarFirestore(codigo) {
-  const { fs, db } = await firebase();
-  const [obra, comp, tipos] = await Promise.all([
+// Obra, tipologías y unidad: primero en desarrolladoras/{dev}/obras/{obra}/... (F1);
+// si no está (o las reglas nuevas no están publicadas), en las colecciones raíz viejas.
+async function cargarObra(fs, db, unidadId) {
+  const base = ["desarrolladoras", T.id, "obras", CFG.obraId];
+  try {
+    const obra = await fs.getDoc(fs.doc(db, ...base));
+    if (obra.exists()) {
+      const [tipos, unidad] = await Promise.all([
+        fs.getDocs(fs.collection(db, ...base, "tipologias")),
+        fs.getDoc(fs.doc(db, ...base, "unidades", String(unidadId))),
+      ]);
+      return { obra, tipos, UNIDAD: unidad.exists() ? unidad.data() : null };
+    }
+  } catch (e) {
+    console.warn("Ruta nueva no disponible, uso la anterior", e.code || e);
+  }
+  const [obra, tipos] = await Promise.all([
     fs.getDoc(fs.doc(db, "obras", CFG.obraId)),
-    fs.getDoc(fs.doc(db, "compradores", codigo)),
     fs.getDocs(fs.collection(db, "tipologias")),
   ]);
+  return { obra, tipos, UNIDAD: null };
+}
+
+async function cargarFirestore(codigo) {
+  const { fs, db } = await firebase();
+  const comp = await fs.getDoc(fs.doc(db, "compradores", codigo));
   if (!comp.exists()) throw new Error("codigo");
+  const INVERSOR = comp.data();
+  const { obra, tipos, UNIDAD } = await cargarObra(fs, db, INVERSOR.unidad);
   if (!obra.exists()) throw new Error("obra");
   const TIPOLOGIAS = {};
   tipos.forEach((d) => (TIPOLOGIAS[d.id] = d.data()));
-  return { OBRA: obra.data(), TIPOLOGIAS, INVERSOR: comp.data() };
+  return { OBRA: obra.data(), TIPOLOGIAS, INVERSOR, UNIDAD };
 }
 
 const normalizar = (c) => (c || "").toUpperCase().replace(/[^A-Z0-9]/g, "");

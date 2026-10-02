@@ -3,6 +3,19 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Multi-desarrolladora (F1): marca, obras, tipologías y unidades de cada
+    // desarrolladora. Públicos: no tienen precios ni datos de inversores.
+    // Se escriben solo con reglas temporales (y a futuro desde el backoffice).
+    match /desarrolladoras/{dev} {
+      allow read: if true; allow write: if false;
+      match /obras/{obra} {
+        allow read: if true; allow write: if false;
+        match /tipologias/{id} { allow read: if true; allow write: if false; }
+        match /unidades/{id}   { allow read: if true; allow write: if false; }
+      }
+    }
+
+    // Colecciones raíz anteriores a la F1: se siguen leyendo como respaldo hasta la F7.
     // Avance de obra y tipologías: públicos (no tienen precios).
     match /obras/{id}       { allow read: if true; allow write: if false; }
     match /tipologias/{id}  { allow read: if true; allow write: if false; }
