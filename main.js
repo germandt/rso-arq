@@ -1,5 +1,5 @@
 // Arranque de la app: decide de dónde salen los datos, maneja el código
-// personal del comprador y las notificaciones push.
+// personal del inversor y las notificaciones push.
 const CFG = self.APP_CONFIG;
 const $ = (id) => document.getElementById(id);
 const CODE_KEY = "adp.codigo";
@@ -44,7 +44,7 @@ async function cargarDemo() {
   return {
     OBRA: window.OBRA,
     TIPOLOGIAS: window.TIPOLOGIAS,
-    COMPRADOR: { ...window.BOLETO, ...window.UNIDADES[cod], unidad: cod },
+    INVERSOR: { ...window.BOLETO, ...window.UNIDADES[cod], unidad: cod },
   };
 }
 
@@ -59,7 +59,7 @@ async function cargarFirestore(codigo) {
   if (!obra.exists()) throw new Error("obra");
   const TIPOLOGIAS = {};
   tipos.forEach((d) => (TIPOLOGIAS[d.id] = d.data()));
-  return { OBRA: obra.data(), TIPOLOGIAS, COMPRADOR: comp.data() };
+  return { OBRA: obra.data(), TIPOLOGIAS, INVERSOR: comp.data() };
 }
 
 const normalizar = (c) => (c || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
