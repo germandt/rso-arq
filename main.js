@@ -1,14 +1,41 @@
 // Arranque de la app: decide de dónde salen los datos, maneja el código
 // personal del inversor y las notificaciones push.
 const CFG = self.APP_CONFIG;
+const T = self.TENANT;
 const $ = (id) => document.getElementById(id);
-const CODE_KEY = "adp.codigo";
+const CODE_KEY = "codigo";
 
-const store = {
+// localStorage con prefijo por desarrolladora ("rso.codigo"): todas comparten el
+// origen de GitHub Pages. Si la desarrolladora tiene claves viejas (legado, solo
+// RSO: "adp.codigo"), se leen una vez y se pasan al nombre nuevo.
+const ls = {
   get: (k) => { try { return localStorage.getItem(k); } catch { return null; } },
   set: (k, v) => { try { localStorage.setItem(k, v); } catch {} },
   del: (k) => { try { localStorage.removeItem(k); } catch {} },
 };
+const viejo = T.legado?.localStorage;
+const store = {
+  get: (k) => {
+    const v = ls.get(`${T.id}.${k}`);
+    if (v !== null || !viejo) return v;
+    const antes = ls.get(`${viejo}.${k}`);
+    if (antes !== null) ls.set(`${T.id}.${k}`, antes);
+    return antes;
+  },
+  set: (k, v) => ls.set(`${T.id}.${k}`, v),
+  del: (k) => { ls.del(`${T.id}.${k}`); if (viejo) ls.del(`${viejo}.${k}`); },
+};
+
+// ---------- Marca y textos de la desarrolladora ----------
+document.title = T.app.nombre;
+document.querySelectorAll("[data-marca]").forEach((el) => {
+  el.innerHTML = "";
+  const b = document.createElement("b");
+  b.textContent = T.marca.corto;
+  el.append(b, T.marca.largo);
+});
+$("gate-titulo").textContent = T.app.nombre;
+$("gate-contacto").textContent = `¿No lo tenés? Escribinos a ${T.contacto.email}`;
 
 // ---------- Service worker (instalable + offline + push) ----------
 let swReg = null;
@@ -97,7 +124,7 @@ async function iniciar() {
     } catch (e) {
       if (e.message === "codigo") {
         store.del(CODE_KEY);
-        return pedirCodigo("Ese código no existe. Revisalo o pedilo a RSO.");
+        return pedirCodigo(`Ese código no existe. Revisalo o pedilo a ${T.nombreCorto}.`);
       }
       console.error(e);
       return pedirCodigo("No pudimos cargar los datos. Probá de nuevo en un rato.");
@@ -111,7 +138,7 @@ async function iniciar() {
 // Se guarda en inscripciones/{codigo}__{visita} (solo creación, ver firestore.rules)
 // y se recuerda en el celular para mostrar "Anotado".
 function accionesVisitas(codigo) {
-  const clave = (id) => `adp.visita.${id}`;
+  const clave = (id) => `visita.${id}`;
   return {
     visitaAnotada: (id) => store.get(clave(id)) === "ok",
     anotarVisita: async (v) => {
@@ -145,10 +172,10 @@ function prepararAvisos() {
   const btn = $("avisos");
   if (!btn) return;
   const estado = typeof Notification !== "undefined" ? Notification.permission : "unsupported";
-  if (estado === "granted" && store.get("adp.push") === "ok") btn.classList.add("on");
+  if (estado === "granted" && store.get("push") === "ok") btn.classList.add("on");
   btn.hidden = false;
   btn.onclick = activarAvisos;
-  if (!CFG.demo && estado === "granted" && store.get("adp.push") === "ok") primerPlanoAlAbrir();
+  if (!CFG.demo && estado === "granted" && store.get("push") === "ok") primerPlanoAlAbrir();
 }
 
 // Con la app abierta FCM no muestra la notificación solo: la mostramos nosotros.
@@ -157,7 +184,7 @@ function escucharEnPrimerPlano(messaging, onMessage, reg) {
   if (escuchando) return;
   escuchando = true;
   onMessage(messaging, ({ notification = {} }) => {
-    reg?.showNotification(notification.title || "Aires del Parque", {
+    reg?.showNotification(notification.title || T.app.nombre, {
       body: notification.body || "",
       icon: "icons/icon-192.png",
     });
@@ -207,7 +234,7 @@ async function activarAvisos() {
       creado: fs.serverTimestamp(),
       plataforma: esIOS ? "ios" : /android/i.test(navigator.userAgent) ? "android" : "otro",
     });
-    store.set("adp.push", "ok");
+    store.set("push", "ok");
     btn.classList.add("on");
     aviso("Listo: te vamos a avisar cuando haya novedades de la obra.");
 

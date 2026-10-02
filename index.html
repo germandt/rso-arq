@@ -28,7 +28,7 @@
         <div class="frame" id="frame">
           <img class="layer gray" alt="" />
           <img class="layer wip" alt="" />
-          <img class="layer color" alt="Render del edificio Aires del Parque" />
+          <img class="layer color" alt="Render del edificio" />
           <div class="cutline" id="cutline"><span id="cutlabel"></span></div>
           <div class="pin" id="pin"><span></span></div>
         </div>
@@ -37,7 +37,7 @@
       <div class="shade-bottom"></div>
 
       <header class="brand">
-        <div class="logo"><b>RSO</b>ARQUITECTOS</div>
+        <div class="logo" data-marca><b>RSO</b>ARQUITECTOS</div>
         <h1 id="obra-nombre"></h1>
         <p id="obra-dir"></p>
       </header>
@@ -152,16 +152,18 @@
   <!-- Ingreso con código personal -->
   <section class="gate" id="gate">
     <form class="gate-card" id="gate-form">
-      <div class="logo"><b>RSO</b>ARQUITECTOS</div>
-      <h1>Aires del Parque</h1>
+      <div class="logo" data-marca><b>RSO</b>ARQUITECTOS</div>
+      <h1 id="gate-titulo">Aires del Parque</h1>
       <p class="muted">Ingresá el código personal que te enviamos para ver tu unidad y tus pagos.</p>
       <input id="gate-input" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" placeholder="Ej. K7P2-9XQM" />
       <button type="submit">Entrar</button>
       <p class="gate-error" id="gate-error"></p>
-      <p class="muted small">¿No lo tenés? Escribinos a info@rsoarquitectos.com</p>
+      <p class="muted small" id="gate-contacto">¿No lo tenés? Escribinos a info@rsoarquitectos.com</p>
     </form>
   </section>
 
+  <!-- tenant.js primero: aplica el tema antes de pintar -->
+  <script src="tenant.js"></script>
   <script src="config.js"></script>
   <script src="app.js"></script>
   <script type="module" src="main.js"></script>

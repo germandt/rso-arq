@@ -1,13 +1,18 @@
 // Service worker: notificaciones en segundo plano (FCM) + caché para abrir sin conexión.
-importScripts("./config.js");
+importScripts("./tenant.js", "./config.js");
 const CFG = self.APP_CONFIG;
-const CACHE = "adp-v3";
+const T = self.TENANT;
+// Un caché por desarrolladora: todas comparten el origen, así que cada SW
+// borra solo los suyos (y el prefijo heredado, si tiene).
+const CACHE = `${T.id}-v4`;
+const MIOS = [`${T.id}-`, T.legado?.cache].filter(Boolean);
 const SHELL = [
   "./",
   "./index.html",
   "./styles.css",
   "./app.js",
   "./main.js",
+  "./tenant.js",
   "./config.js",
   "./manifest.webmanifest",
   "./assets/edificio.jpg",
@@ -24,7 +29,7 @@ self.addEventListener("install", (e) => {
 self.addEventListener("activate", (e) => {
   e.waitUntil(
     caches.keys()
-      .then((ks) => Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then((ks) => Promise.all(ks.filter((k) => k !== CACHE && MIOS.some((p) => k.startsWith(p))).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
