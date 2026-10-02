@@ -63,10 +63,13 @@
     </section>
 
     <!-- 2 · Etapas -->
-    <section class="slide slide-etapas">
+    <section class="slide slide-etapas" id="slide-etapas">
       <div class="content">
         <span class="eyebrow">Avance por etapa</span>
         <h2>Así va la obra</h2>
+        <!-- Visitas a obra: solo si OBRA.features.visitas está activo -->
+        <div class="visita glass" id="visita" hidden></div>
+        <div class="visitas" id="visitas" hidden></div>
         <ol class="etapas" id="etapas"></ol>
       </div>
     </section>

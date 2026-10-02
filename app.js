@@ -1,7 +1,8 @@
 // Pinta la app a partir de los datos (vienen de Firestore o del modo demo).
 // COMPRADOR = { cliente, unidad, cub, semi, precio, fechaBoleto, anticipoPct,
 //               cuotas, primeraCuota, cuotasPagadas? }
-window.renderApp = ({ OBRA, TIPOLOGIAS, COMPRADOR }) => {
+// acciones = { visitaAnotada(id) → bool, anotarVisita(visita) → Promise<bool> } (las pone main.js)
+window.renderApp = ({ OBRA, TIPOLOGIAS, COMPRADOR }, acciones = {}) => {
   const BOLETO = COMPRADOR;
   const $ = (id) => document.getElementById(id);
 
@@ -72,8 +73,68 @@ window.renderApp = ({ OBRA, TIPOLOGIAS, COMPRADOR }) => {
     })
     .join("");
 
+  // ---------- 2b · Visitas a obra (feature por proyecto) ----------
+  // OBRA.features.visitas prende la tarjeta de próxima visita y los chips.
+  // OBRA.visitas = [{ id, corto, titulo, etapa, fecha: "AAAA-MM", realizada? }]
+  const visitas = (OBRA.features?.visitas && OBRA.visitas) || [];
+  if (visitas.length) {
+    const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+    const mes = (f) => {
+      const [a, m] = f.split("-").map(Number);
+      return `${MESES[m - 1]} ${a}`;
+    };
+    const rombo = (cls) => `<svg class="rombo ${cls}" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 1.5L12.5 7L7 12.5L1.5 7Z"/></svg>`;
+    const proxima = visitas.find((v) => !v.realizada);
+
+    $("slide-etapas").classList.add("con-visitas");
+    $("visitas").hidden = false;
+    $("visitas").innerHTML = visitas
+      .map((v) => {
+        const cls = v.realizada ? "ok" : v === proxima ? "next" : "";
+        return `<div class="chip-visita ${cls}">${rombo(cls)}<b>${v.corto}</b><span>${v.realizada ? "realizada" : mes(v.fecha)}</span></div>`;
+      })
+      .join("");
+
+    if (proxima) {
+      const [a, m] = proxima.fecha.split("-").map(Number);
+      const dias = Math.round((new Date(a, m - 1, 15) - new Date()) / 864e5);
+      const falta =
+        dias < 7 ? "en las próximas semanas"
+        : dias <= 84 ? `faltan ~${Math.round(dias / 7)} semanas`
+        : `faltan ~${Math.round(dias / 30.4)} meses`;
+      const etapa = OBRA.etapas.find((e) => e.nombre === proxima.etapa);
+      const card = $("visita");
+      card.hidden = false;
+      card.innerHTML = `
+        <div class="row">${rombo("next")}<span class="eyebrow ambar">Próxima visita a obra</span></div>
+        <h3>${proxima.titulo}</h3>
+        <div class="row between">
+          <div><span class="muted small">Fecha estimada</span><div class="mid">${mes(proxima.fecha)}</div></div>
+          <span class="muted small">${falta}</span>
+        </div>
+        ${etapa ? `<div class="habilita">
+          <div class="row between small"><span class="muted">Se habilita con: ${etapa.nombre}</span><b>${etapa.avance}%</b></div>
+          <div class="bar"><i data-w="${etapa.avance}"></i></div>
+        </div>` : ""}
+        <button type="button" class="cta" id="visita-cta"></button>`;
+
+      const cta = $("visita-cta");
+      const pintar = (anotado) => {
+        cta.textContent = anotado ? "Anotado ✓ · te avisamos la fecha" : "Quiero ir";
+        cta.classList.toggle("done", anotado);
+        cta.disabled = anotado;
+      };
+      pintar(!!acciones.visitaAnotada?.(proxima.id));
+      cta.onclick = async () => {
+        cta.disabled = true;
+        const ok = await acciones.anotarVisita?.(proxima);
+        pintar(!!ok);
+      };
+    }
+  }
+
   function playEtapas() {
-    document.querySelectorAll("#etapas .bar i").forEach((el, i) => {
+    document.querySelectorAll("#etapas .bar i, #visita .bar i").forEach((el, i) => {
       setTimeout(() => (el.style.width = el.dataset.w + "%"), i * 90);
     });
   }

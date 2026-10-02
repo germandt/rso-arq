@@ -9,3 +9,5 @@ CLAUDE.md
 node_modules/
 # Zips de trabajo
 *.zip
+# Bocetos de diseño (canvas de claude.ai), no van a Pages
+_disenos/

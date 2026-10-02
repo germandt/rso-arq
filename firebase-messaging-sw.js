@@ -1,7 +1,7 @@
 // Service worker: notificaciones en segundo plano (FCM) + caché para abrir sin conexión.
 importScripts("./config.js");
 const CFG = self.APP_CONFIG;
-const CACHE = "adp-v1";
+const CACHE = "adp-v2";
 const SHELL = [
   "./",
   "./index.html",

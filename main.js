@@ -78,7 +78,7 @@ function pedirCodigo(error) {
 }
 
 async function iniciar() {
-  let datos;
+  let datos, codigo;
   if (CFG.demo) {
     datos = await cargarDemo();
     document.body.classList.add("is-demo");
@@ -90,7 +90,7 @@ async function iniciar() {
       url.searchParams.delete("c"); // no dejar el código a la vista
       history.replaceState(null, "", url);
     }
-    const codigo = store.get(CODE_KEY);
+    codigo = store.get(CODE_KEY);
     if (!codigo) return pedirCodigo();
     try {
       datos = await cargarFirestore(codigo);
@@ -103,8 +103,38 @@ async function iniciar() {
       return pedirCodigo("No pudimos cargar los datos. Probá de nuevo en un rato.");
     }
   }
-  window.renderApp(datos);
+  window.renderApp(datos, accionesVisitas(codigo));
   prepararAvisos();
+}
+
+// ---------- Visitas a obra: "Quiero ir" ----------
+// Se guarda en inscripciones/{codigo}__{visita} (solo creación, ver firestore.rules)
+// y se recuerda en el celular para mostrar "Anotado".
+function accionesVisitas(codigo) {
+  const clave = (id) => `adp.visita.${id}`;
+  return {
+    visitaAnotada: (id) => store.get(clave(id)) === "ok",
+    anotarVisita: async (v) => {
+      try {
+        if (!CFG.demo) {
+          const { fs, db } = await firebase();
+          await fs.setDoc(fs.doc(db, "inscripciones", `${codigo}__${v.id}`), {
+            obra: CFG.obraId,
+            visita: v.id,
+            codigo,
+            creado: fs.serverTimestamp(),
+          });
+        }
+        store.set(clave(v.id), "ok");
+        aviso(CFG.demo ? "Modo demo: quedaría anotado para la visita." : "Listo: te anotamos. Te avisamos la fecha exacta con tiempo.");
+        return true;
+      } catch (e) {
+        console.error(e);
+        aviso("No pudimos anotarte. Probá de nuevo en un rato.");
+        return false;
+      }
+    },
+  };
 }
 
 // ---------- Notificaciones push ----------

@@ -23,5 +23,19 @@ service cloud.firestore {
         && request.resource.data.creado == request.time;
       allow read, delete: if false;
     }
+
+    // "Quiero ir" a una visita de obra: id = {codigo}__{visita}.
+    // Solo compradores con código válido; nadie puede leer desde la app.
+    match /inscripciones/{id} {
+      allow create, update: if id.size() < 100
+        && request.resource.data.keys().hasOnly(['obra', 'visita', 'codigo', 'creado'])
+        && request.resource.data.obra is string
+        && request.resource.data.visita is string
+        && request.resource.data.codigo is string
+        && id == request.resource.data.codigo + '__' + request.resource.data.visita
+        && exists(/databases/$(database)/documents/compradores/$(request.resource.data.codigo))
+        && request.resource.data.creado == request.time;
+      allow read, delete: if false;
+    }
   }
 }

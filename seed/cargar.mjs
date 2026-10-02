@@ -1,7 +1,8 @@
 // Carga inicial de datos en Firestore por REST (sin credenciales secretas).
 // Requiere que estén publicadas las reglas temporales firebase/firestore.rules.carga-inicial.
 //
-// Uso:  node seed/cargar.mjs [--dry]
+// Uso:  node seed/cargar.mjs [--dry] [--solo-obra]
+//   --solo-obra: actualiza solo obras/{obraId} (avance, features, visitas) y no toca compradores
 //   - obra, tipologías y precios salen de demo/data-demo.js
 //   - compradores salen de seed/compradores.json (si no existe, usa compradores.ejemplo.json)
 //   - genera un código por comprador y los guarda en seed/codigos.csv (NO se sube al repo)
@@ -13,6 +14,7 @@ import { fileURLToPath } from "node:url";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const dry = process.argv.includes("--dry");
+const soloObra = process.argv.includes("--solo-obra");
 
 // --- Config pública y datos demo (se evalúan los scripts tal cual) ---
 const ctx = { self: {}, window: {} };
@@ -56,6 +58,7 @@ async function escribir(col, id, data) {
 }
 
 await escribir("obras", CFG.obraId, OBRA);
+if (soloObra) process.exit(0);
 // Firestore no admite listas dentro de listas: [["Baño", "2.25 × 1.65 m"]] → [{ nombre, medida }]
 for (const [id, t] of Object.entries(TIPOLOGIAS)) {
   const ambientesDetalle = (t.ambientesDetalle || []).map(([nombre, medida]) => ({ nombre, medida }));
