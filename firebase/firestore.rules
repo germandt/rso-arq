@@ -7,7 +7,7 @@ service cloud.firestore {
     match /obras/{id}       { allow read: if true; allow write: if false; }
     match /tipologias/{id}  { allow read: if true; allow write: if false; }
 
-    // Cada comprador: solo se puede leer conociendo el código exacto.
+    // Cada inversor (colección compradores): solo se puede leer conociendo el código exacto.
     // `list` prohibido => nadie puede listar todos los códigos.
     match /compradores/{codigo} {
       allow get: if true;
@@ -25,7 +25,7 @@ service cloud.firestore {
     }
 
     // "Quiero ir" a una visita de obra: id = {codigo}__{visita}.
-    // Solo compradores con código válido; nadie puede leer desde la app.
+    // Solo inversores con código válido; nadie puede leer desde la app.
     match /inscripciones/{id} {
       allow create, update: if id.size() < 100
         && request.resource.data.keys().hasOnly(['obra', 'visita', 'codigo', 'creado'])

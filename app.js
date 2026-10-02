@@ -1,9 +1,9 @@
 // Pinta la app a partir de los datos (vienen de Firestore o del modo demo).
-// COMPRADOR = { cliente, unidad, cub, semi, precio, fechaBoleto, anticipoPct,
+// INVERSOR = { cliente, unidad, cub, semi, precio, fechaBoleto, anticipoPct,
 //               cuotas, primeraCuota, cuotasPagadas? }
 // acciones = { visitaAnotada(id) → bool, anotarVisita(visita) → Promise<bool> } (las pone main.js)
-window.renderApp = ({ OBRA, TIPOLOGIAS, COMPRADOR }, acciones = {}) => {
-  const BOLETO = COMPRADOR;
+window.renderApp = ({ OBRA, TIPOLOGIAS, INVERSOR }, acciones = {}) => {
+  const BOLETO = INVERSOR;
   const $ = (id) => document.getElementById(id);
 
   const usd = (n) =>
@@ -12,8 +12,8 @@ window.renderApp = ({ OBRA, TIPOLOGIAS, COMPRADOR }, acciones = {}) => {
   const fecha = (iso, opts = { day: "numeric", month: "short", year: "numeric" }) =>
     new Date(iso + "T12:00:00").toLocaleDateString("es-AR", opts);
 
-  const codigo = String(COMPRADOR.unidad).toUpperCase();
-  const unidad = COMPRADOR;
+  const codigo = String(INVERSOR.unidad).toUpperCase();
+  const unidad = INVERSOR;
   const piso = Number(codigo.slice(0, -1));
   const letra = codigo.slice(-1);
   const tipo = TIPOLOGIAS[letra];
