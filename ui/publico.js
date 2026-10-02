@@ -271,8 +271,11 @@
   const cfg = self.APP_CONFIG;
   const vivo = S.enCurso.enVivo;
   if (vivo && cfg && !cfg.demo) {
-    fetch(`https://firestore.googleapis.com/v1/projects/${vivo.proyecto}/databases/(default)/documents/${vivo.doc}?key=${cfg.firebase.apiKey}`)
-      .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+    const leer = (doc) =>
+      fetch(`https://firestore.googleapis.com/v1/projects/${vivo.proyecto}/databases/(default)/documents/${doc}?key=${cfg.firebase.apiKey}`)
+        .then((r) => (r.ok ? r.json() : Promise.reject(r.status)));
+    leer(vivo.doc)
+      .catch((e) => (vivo.respaldo ? leer(vivo.respaldo) : Promise.reject(e)))
       .then((doc) => {
         const obra = fsValor({ mapValue: doc });
         if (!Array.isArray(obra.etapas)) return;

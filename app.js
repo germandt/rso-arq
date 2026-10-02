@@ -1,8 +1,9 @@
 // Pinta la app a partir de los datos (vienen de Firestore o del modo demo).
 // INVERSOR = { cliente, unidad, cub, semi, precio, fechaBoleto, anticipoPct,
 //               cuotas, primeraCuota, cuotasPagadas? }
+// UNIDAD = { nombre, piso, tipologiaId, cub, semi } (F1; si falta, se deduce de "3C")
 // acciones = { visitaAnotada(id) → bool, anotarVisita(visita) → Promise<bool> } (las pone main.js)
-window.renderApp = ({ OBRA, TIPOLOGIAS, INVERSOR }, acciones = {}) => {
+window.renderApp = ({ OBRA, TIPOLOGIAS, INVERSOR, UNIDAD }, acciones = {}) => {
   const BOLETO = INVERSOR;
   const $ = (id) => document.getElementById(id);
 
@@ -14,9 +15,9 @@ window.renderApp = ({ OBRA, TIPOLOGIAS, INVERSOR }, acciones = {}) => {
 
   const codigo = String(INVERSOR.unidad).toUpperCase();
   const unidad = INVERSOR;
-  const piso = Number(codigo.slice(0, -1));
+  const piso = UNIDAD?.piso ?? Number(codigo.slice(0, -1));
   const letra = codigo.slice(-1);
-  const tipo = TIPOLOGIAS[letra];
+  const tipo = TIPOLOGIAS[UNIDAD?.tipologiaId ?? letra];
 
   // ---------- 1 · Obra ----------
   $("obra-nombre").textContent = OBRA.nombre;

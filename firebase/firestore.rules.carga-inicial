@@ -1,6 +1,7 @@
 rules_version = '2';
-// Reglas TEMPORALES solo para la carga inicial de datos (seed/cargar.mjs).
+// Reglas TEMPORALES solo para cargar datos (seed/cargar.mjs, seed/migrar-f1.mjs).
 // Vencen solas el 15/10/2026. Después de cargar, pegar firestore.rules.
+// Mientras estén publicadas, fallan los avisos push y "Quiero ir" (no hay reglas para eso).
 service cloud.firestore {
   match /databases/{database}/documents {
     match /{col}/{id} {
@@ -8,6 +9,11 @@ service cloud.firestore {
       allow get: if col == 'compradores';
       allow write: if col in ['obras', 'tipologias', 'compradores']
         && request.time < timestamp.date(2026, 10, 15);
+    }
+    // F1: desarrolladoras/{dev} y todo lo que cuelga (obras, tipologías, unidades).
+    match /desarrolladoras/{ruta=**} {
+      allow read: if true;
+      allow write: if request.time < timestamp.date(2026, 10, 15);
     }
   }
 }
